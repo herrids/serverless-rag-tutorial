@@ -13,7 +13,10 @@ def handler(job):
 
     print("Job Input:", job_input)
 
-    print(f"{MODEL_BASE_PATH}{MODEL_NAME}")
+    print(os.getcwd())
+
+    for file in os.listdir("/runpod-volume"):
+        print(f"{file}")
 
     # Initialize the embedding model
     embedding_model = HuggingFaceEmbeddings(
