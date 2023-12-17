@@ -1,5 +1,5 @@
 import runpod, os
-from angchain.embeddings.huggingface import HuggingFaceEmbeddings  # Replace with actual import
+from langchain.embeddings.huggingface import HuggingFaceEmbeddings  # Replace with actual import
 from langchain.vectorstores import FAISS  # Replace with actual import
 
 MODEL_BASE_PATH = os.environ.get('MODEL_BASE_PATH', '/runpod-volume/')
