@@ -15,8 +15,8 @@ FROM runpod/base:0.4.0-cuda11.8.0
 
 # Python dependencies
 COPY builder/requirements.txt /requirements.txt
-RUN python3.7 -m pip install --upgrade pip && \
-    python3.7 -m pip install --upgrade -r /requirements.txt --no-cache-dir && \
+RUN python3.10 -m pip install --upgrade pip && \
+    python3.10 -m pip install --upgrade -r /requirements.txt --no-cache-dir && \
     rm /requirements.txt
 
 # NOTE: The base image comes with multiple Python versions pre-installed.
@@ -28,4 +28,4 @@ RUN huggingface-cli download sentence-transformers/all-MiniLM-L6-v2 \
 # Add src files (Worker Template)
 ADD src .
 
-CMD python3.7 -u /handler.py
+CMD python3.10 -u /handler.py
