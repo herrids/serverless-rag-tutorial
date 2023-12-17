@@ -1,10 +1,22 @@
 import runpod, os
 from langchain.embeddings import HuggingFaceEmbeddings  
 from langchain.vectorstores import FAISS
-from langchain.schema.document import Document
+from sentence_transformers import SentenceTransformer
 
-MODEL_BASE_PATH = os.environ.get('MODEL_BASE_PATH', '/runpod-volume')
+MODEL_BASE_PATH = os.environ.get('MODEL_BASE_PATH', '/runpod-volume/models/sentence_transformers')
 MODEL_NAME = os.environ.get('MODEL_NAME', 'all-MiniLM-L6-v2')
+
+def get_model(model_name, directory):
+    # Check if the model exists in the specified directory
+    if not os.path.exists(directory):
+        print(f"Model not found in {directory}. Downloading from Hugging Face.")
+
+        model = SentenceTransformer(model_name)
+        model.save(directory)
+        return HuggingFaceEmbeddings(model_name=directory)
+    else:
+        print(f"Model found in {directory}. Loading model.")
+        return HuggingFaceEmbeddings(model_name=directory)
 
 def handler(job):
     """ Handler function that will be used to process jobs. """
@@ -14,15 +26,8 @@ def handler(job):
 
     print("Job Input:", job_input)
 
-    print(os.getcwd())
-
-    for file in os.listdir("/runpod-volume"):
-        print(f"{file}")
-
     # Initialize the embedding model
-    embedding_model = HuggingFaceEmbeddings(
-        model_name=f"{MODEL_BASE_PATH}/{MODEL_NAME}",
-        model_kwargs={'device':'cuda'})
+    embedding_model = get_model(MODEL_NAME, MODEL_BASE_PATH)
 
     # Try loading the existing vector store, or create a new one
     try:
