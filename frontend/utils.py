@@ -12,7 +12,7 @@ def upload_documents_to_vector_store(file):
     documents = []
 
     file_type = file.split(".")[-1].rstrip('/')
-    
+
     if file_type == 'csv':
         loader = CSVLoader(file_path=file)
         documents = loader.load()
@@ -27,8 +27,8 @@ def upload_documents_to_vector_store(file):
         )
 
         documents = text_splitter.split_documents(pages)
-        serialized_documents = [doc.to_json() for doc in documents]
-        print(serialized_documents)
+        serialized_texts = [item['kwargs']['page_content'] for item in documents if 'kwargs' in item and 'page_content' in item['kwargs']]
+        print(serialized_texts)
 
     headers = {
         'Authorization': f'Bearer {bearer_token}'
@@ -36,7 +36,7 @@ def upload_documents_to_vector_store(file):
 
     response = requests.post(url, headers=headers, json={
         "input": {        
-            "documents": serialized_documents,
+            "documents": serialized_texts,
             "file_output": "db"
             }
         })
