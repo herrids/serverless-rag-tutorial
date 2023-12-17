@@ -28,7 +28,6 @@ with gr.Blocks(gr.themes.Soft(primary_hue=gr.themes.colors.slate, secondary_hue=
             reset_inst_btn.click(reset_sys_instruction,instruction,instruction)
 
         with gr.Column(scale=1, variant = 'panel'):
-            gr.Markdown("## Select the Generation Model")
 
             chatbot = gr.Chatbot([], elem_id="chatbot",
                                 label='Chatbox', height=725, )

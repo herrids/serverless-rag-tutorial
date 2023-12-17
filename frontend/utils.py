@@ -5,12 +5,14 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 import requests
 
 def upload_documents_to_vector_store(file):
-    file_type = file.split(".")[-1].rstrip('/')
 
     url = os.environ.get('VECTOR_STORE_URL')
+    bearer_token = os.environ.get('BEARER_TOKEN')
 
     documents = []
 
+    file_type = file.split(".")[-1].rstrip('/')
+    
     if file_type == 'csv':
         loader = CSVLoader(file_path=file)
         documents = loader.load()
@@ -25,14 +27,25 @@ def upload_documents_to_vector_store(file):
         )
 
         documents = text_splitter.split_documents(pages)
+        serialized_documents = [doc.to_json() for doc in documents]
+        print(serialized_documents)
 
-    response = requests.post(url, json={"documents": documents})
+    headers = {
+        'Authorization': f'Bearer {bearer_token}'
+    }
+
+    response = requests.post(url, headers=headers, json={
+        "input": {        
+            "documents": serialized_documents,
+            "file_output": "db"
+            }
+        })
 
     # Check response status and handle accordingly
     if response.status_code == 200:
         print("Document sent successfully.")
     else:
-        print(f"Failed to send document: {response.status_code}")
+        print(f"Failed to send document: {response}")
 
     return "Upload completed."
 
