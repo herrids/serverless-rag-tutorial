@@ -1,6 +1,6 @@
 import runpod, os
-from langchain.embeddings.huggingface import HuggingFaceEmbeddings  # Replace with actual import
-from langchain.vectorstores import FAISS  # Replace with actual import
+from langchain.embeddings import HuggingFaceEmbeddings  
+from langchain.vectorstores import FAISS
 
 MODEL_BASE_PATH = os.environ.get('MODEL_BASE_PATH', '/runpod-volume/')
 MODEL_NAME = os.environ.get('MODEL_NAME', 'all-MiniLM-L6-v2')
@@ -13,8 +13,10 @@ def handler(job):
 
     print("Job Input:", job_input)
 
+    print(f"{MODEL_BASE_PATH}{MODEL_NAME}")
+
     # Initialize the embedding model
-    embedding_model = HuggingFaceEmbeddings(f"{MODEL_BASE_PATH}/{MODEL_NAME}")
+    embedding_model = HuggingFaceEmbeddings(f"{MODEL_BASE_PATH}{MODEL_NAME}")
 
     # Try loading the existing vector store, or create a new one
     try:
