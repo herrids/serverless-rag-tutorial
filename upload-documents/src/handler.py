@@ -16,7 +16,9 @@ def handler(job):
     print(f"{MODEL_BASE_PATH}{MODEL_NAME}")
 
     # Initialize the embedding model
-    embedding_model = HuggingFaceEmbeddings(f"{MODEL_BASE_PATH}{MODEL_NAME}")
+    embedding_model = HuggingFaceEmbeddings(
+        model_name=f"{MODEL_BASE_PATH}{MODEL_NAME}",
+        model_kwargs={'device':'cuda'})
 
     # Try loading the existing vector store, or create a new one
     try:
