@@ -1,43 +1,41 @@
 import gc, os
-from langchain.document_loaders.csv_loader import CSVLoader
-from langchain.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+import fitz
 import requests
 
-def upload_documents_to_vector_store(file):
+VECTOR_STORE_URL = os.environ.get('VECTOR_STORE_URL')
+MODEL_URL = os.environ.get('MODEL_URL')
+BEARER_TOKEN = os.environ.get('BEARER_TOKEN')
 
-    url = os.environ.get('VECTOR_STORE_URL')
-    bearer_token = os.environ.get('BEARER_TOKEN')
+def upload_documents_to_vector_store(file):
 
     documents = []
 
     file_type = file.split(".")[-1].rstrip('/')
 
-    if file_type == 'csv':
-        loader = CSVLoader(file_path=file)
-        documents = loader.load()
+    if file_type == 'pdf':
+        doc = fitz.open(file)
+        full_text = ""
 
-    elif file_type == 'pdf':
-        loader = PyPDFLoader(file)
-        pages = loader.load()
+        for page in doc:
+            full_text += page.get_text()
 
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size = 512,
             chunk_overlap = 128,
         )
 
-        documents = text_splitter.split_documents(pages)
-        serialized_texts = [item['kwargs']['page_content'] for item in documents if 'kwargs' in item and 'page_content' in item['kwargs']]
-        print(serialized_texts)
+        documents = text_splitter.split_text(full_text)
 
     headers = {
-        'Authorization': f'Bearer {bearer_token}'
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {BEARER_TOKEN}'
     }
 
-    response = requests.post(url, headers=headers, json={
+    response = requests.post(VECTOR_STORE_URL, headers=headers, json={
         "input": {        
-            "documents": serialized_texts,
-            "file_output": "db"
+            "documents": documents,
+            "file_output": "runpod-volume/db"
             }
         })
 
@@ -76,10 +74,9 @@ def bot(history,
     chat_history_formatted = get_chat_history(history[:-1])
 
     # Define the RunPod endpoint URL and any necessary headers
-    url = os.environ.get('MODEL_URL')
     headers = {
         'Content-Type': 'application/json',
-        # Add any necessary headers like authentication tokens here
+        'Authorization': f'Bearer {BEARER_TOKEN}'
     }
 
     # Prepare the data for the POST request
@@ -94,11 +91,10 @@ def bot(history,
         'top_p': top_p,
         'k_context': k_context,
         'num_return_sequences': num_return_sequences
-        # Add any other parameters required by the RunPod
     }
 
     # Make the POST request to the RunPod endpoint
-    response = requests.post(url, json=data, headers=headers)
+    response = requests.post(MODEL_URL, json=data, headers=headers)
 
     # Check if the request was successful
     if response.status_code == 200:
