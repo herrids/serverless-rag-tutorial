@@ -1,58 +1,73 @@
-from templates import MISTRAL_TEMPLATE
-from example import EXAMPLE, EXAMPLE_STRING
-from vllm import LLM, SamplingParams
-from langchain.output_parsers import StructuredOutputParser, ResponseSchema
-import runpod, json, os
+from langchain.llms import VLLM
+from langchain.vectorstores import FAISS
+from langchain.prompts import PromptTemplate
+from langchain.chains import ConversationalRetrievalChain
+from langchain.embeddings import HuggingFaceEmbeddings  
+import runpod, os
 
-MODEL_BASE_PATH = os.environ.get('MODEL_BASE_PATH', '/runpod-volume/')
+MODEL_BASE_PATH = os.environ.get('MODEL_BASE_PATH', '/models/')
 MODEL_NAME = os.environ.get('MODEL_NAME', 'mistralai')
+EMBEDDING_MODEL_PATH = os.environ.get('EMBEDDING_MODEL_PATH', '/runpod-volume/models/sentence_transformers')
 
-llm = LLM(
-    f"{MODEL_BASE_PATH}/{MODEL_NAME}",
-    dtype="bfloat16"
-    )
+llm = VLLM(
+    model=f"{MODEL_BASE_PATH}/{MODEL_NAME}"
+)
 
-def remove_json_formatting(input_string):
-    if input_string.startswith("```json") and input_string.endswith("```"):
-        return input_string[len("```json"): -len("```")].strip()
-    else:
-        return input_string
+def get_chat_history(inputs):
+
+    res = []
+    for human, ai in inputs:
+        res.append(f"Human:{human}\nAssistant:{ai}")
+    return "\n".join(res)
+
+def create_vectordb(directory):
+    embeddings_model = HuggingFaceEmbeddings(model_name=directory)
+    vectordb = FAISS.load_local("./db/faiss_index", embeddings_model)
+    
+    return vectordb
 
 def handler(job):
     """ Handler function that will be used to process jobs. """
     job_input = job['input']
 
-    prompt = MISTRAL_TEMPLATE(EXAMPLE_STRING, job_input['document'])
+    instruction = job_input.get('instruction')
+    history = job_input.get('history')
+    sampling_params = job_input.get('sampling_params')
 
     print("Job Input:", job_input)
 
-    sampling_params = SamplingParams(
-        max_tokens=2048,
-        temperature=0.1
+    vectordb = create_vectordb(EMBEDDING_MODEL_PATH)
+
+    template = instruction + """
+        context:\n
+        {context}\n
+        data: {question}\n
+        """
+
+    QCA_PROMPT = PromptTemplate(input_variables=["instruction", "context", "question"], template=template)
+
+    qa = ConversationalRetrievalChain.from_llm(
+        llm=llm,
+        chain_type='stuff',
+        retriever=vectordb.as_retriever(search_kwargs={"k": sampling_params.get("k_context")}),
+        combine_docs_chain_kwargs={"prompt": QCA_PROMPT},
+        get_chat_history=lambda h: h,
+        verbose=True
     )
 
-    response = llm.generate(prompt, sampling_params)
+    chat_history_formatted = get_chat_history(history[:-1])
 
-    print("response:", response)
+    res = qa(
+        {
+            'question': history[-1][0],
+            'chat_history': chat_history_formatted
+        }
+    )
 
-    response_text = response[0].outputs[0].text
-
-    try:
-        formatted_response = remove_json_formatting(response_text.strip())
-
-        response_schemas = [ResponseSchema(name=key, description="") for key in list(EXAMPLE.keys())]
-        output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
-
-        output = output_parser.parse(formatted_response)
-    except Exception as e1:
-        print(e1)
-        try:
-            output = json.loads(formatted_response)
-        except Exception as e2:
-            output = response_text
+    history[-1][1] = res['answer']
 
     ret = {
-        "result": output
+        "result": history
     }
     return ret
 
