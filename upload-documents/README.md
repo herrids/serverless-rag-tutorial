@@ -1,10 +1,3 @@
-## TODO
-# add csv example
-# add faiss file to repository
-# excpect prompt, instructions and hyperparameter in request
-# integrate rag into handler
-# create standalone Gradio app
-
 # RunPod Worker for Mistral and RAG
 
 ## 📖 | Getting Started

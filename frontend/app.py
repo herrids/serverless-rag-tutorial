@@ -1,19 +1,18 @@
 import gradio as gr
 from utils import *
 
-
 with gr.Blocks(gr.themes.Soft(primary_hue=gr.themes.colors.slate, secondary_hue=gr.themes.colors.purple)) as demo:
     with gr.Row():
 
         with gr.Column(scale=1, variant = 'panel'):
-            gr.Markdown("## Upload Document & Select the Embedding Model")
+            gr.Markdown("## Upload Document")
             file = gr.File(type="filepath")
             with gr.Row(equal_height=True):
                 with gr.Column(scale=1, variant='compact'):
                     vector_index_btn = gr.Button('Create vector store', variant='primary',scale=1)
                     vector_index_msg_out = gr.Textbox(show_label=False, lines=1,scale=1, placeholder="Creating vectore store ...")
 
-            instruction = gr.Textbox(label="System instruction", lines=3, value="Use the following pieces of context to answer the question at the end by. Generate the answer based on the given context only.If you do not find any information related to the question in the given context, just say that you don't know, don't try to make up an answer. Keep your answer expressive.")
+            instruction = gr.Textbox(label="System instruction", lines=3, value=DEFAULT_INSTRUCTION)
             reset_inst_btn = gr.Button('Reset',variant='primary', size = 'sm')
 
             with gr.Accordion(label="Text generation tuning parameters"):

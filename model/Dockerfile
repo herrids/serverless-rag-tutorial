@@ -7,12 +7,6 @@ FROM runpod/base:0.4.0-cuda11.8.0
 # IMPORTANT: The base image overrides the default huggingface cache location.
 
 
-# --- Optional: System dependencies ---
-# COPY builder/setup.sh /setup.sh
-# RUN /bin/bash /setup.sh && \
-#     rm /setup.sh
-
-
 # Python dependencies
 COPY builder/requirements.txt /requirements.txt
 RUN python3.10 -m pip install --upgrade pip && \
