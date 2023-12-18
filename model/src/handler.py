@@ -18,7 +18,7 @@ llm = VLLM(
 
 def get_vectordb(directory):
     embeddings_model = HuggingFaceEmbeddings(model_name=directory)
-    vectordb = FAISS.load_local("./db/faiss_index", embeddings_model)
+    vectordb = FAISS.load_local("/runpod-volume/db/faiss_index", embeddings_model)
     
     return vectordb
 
