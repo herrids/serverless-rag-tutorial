@@ -12,7 +12,8 @@ EMBEDDING_MODEL_PATH = os.environ.get(
     '/runpod-volume/models/sentence_transformers')
 
 llm = VLLM(
-    model=f"{MODEL_BASE_PATH}/{MODEL_NAME}"
+    model=f"{MODEL_BASE_PATH}/{MODEL_NAME}",
+    vllm_kwargs={"max_model_len": 8192}
 )
 
 def get_vectordb(directory):
@@ -34,11 +35,11 @@ def handler(job):
 
     vectordb = get_vectordb(EMBEDDING_MODEL_PATH)
 
-    template = instruction + """
+    template = instruction + """<s>[INST]
         context:\n
         {context}\n
         data: {question}\n
-        """
+        [/INST]"""
 
     QCA_PROMPT = PromptTemplate(
         input_variables=["instruction", "context", "question"], 
